@@ -1,3 +1,2 @@
 # Recommendation_System
-Item Based
-Collaborative filtering
+## fm: Factorization Machines

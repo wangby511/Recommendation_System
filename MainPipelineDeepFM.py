@@ -208,17 +208,25 @@ optimizer = tf.train.AdamOptimizer(learning_rate=dfm_params['learning_rate'],
                                    beta2=0.999,
                                    epsilon=1e-8).minimize(loss)
 
-# """train"""
-# with tf.Session() as sess:
-#     sess.run(tf.global_variables_initializer())
-#     for i in range(100):
-#         epoch_loss,_ = sess.run([loss,optimizer],
-#                                 feed_dict={feat_index:train_feature_index,
-#                                            feat_value:train_feature_value,
-#                                            label:train_y}
-#                                 )
-#         print("epoch %s,loss is %s" % (str(i),str(epoch_loss)))
-
+"""train"""
+with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer())
+    for i in range(20):
+        epoch_loss,_ = sess.run([loss,optimizer],
+                                feed_dict={feat_index:train_feature_index,
+                                           feat_value:train_feature_value,
+                                           label:train_y}
+                                )
+        print("epoch %s,loss is %s" % (str(i),str(epoch_loss)))
+    predicted = sess.run([out],feed_dict={
+        feat_index:test_feature_index,
+        feat_value:test_feature_value
+    })
+    predicted = np.array(predicted).reshape(-1)
+    print(predicted)
+    for target in predicted:
+        if target > 0.5:
+            print (target)
 # /Library/Frameworks/Python.framework/Versions/3.7/bin/python3.7 /Users/wangboyuan/PycharmProjects/ml-100k/MainPipelineDeepFM.py
 # /Users/wangboyuan/PycharmProjects/ml-100k/MainPipelineDeepFM.py:23: FutureWarning: Sorting because non-concatenation axis is not aligned. A future version
 # of pandas will change to not sort by default.

@@ -64,6 +64,7 @@ class PNN(BaseEstimator, TransformerMixin):
             # Quardatic Part
             """
             IPNN
+            
             f_i ...  K * 1 维
             f = (f_1^T, f_2^T, ..., f_N^T) 
             N = field_size
@@ -74,10 +75,18 @@ class PNN(BaseEstimator, TransformerMixin):
             lp_I = (f_column_1)^2 + (f_column_2)^2 + ... + (f_column_K)^2
             = [f_column_1,f_column_2,...,f_column_K]的第二范式，平方和
             
-            lp = [lp_1,lp_2,...,lp_I,...,lp_50] (init_deep_size = 50)
+            lp = [lp_1,lp_2,...,lp_I,...,lp_D1] (D1 = init_deep_size = 50)
             
-            self.lp = BATCH_SIZE * 50 维度
+            self.lp = BATCH_SIZE * D1 维度
             
+            TIME COMPLEXITY:
+            p_ij :M
+            p : M * N * N
+            lp : N * N * D1 -> calculate the sum for each p matrix
+            
+            TOTAL for single sample: (M + D1) * N * N also (K + D1) * F * F, F = field_size = N, K = embedding_size = M
+            But in the calculation: 
+            N * M * D1 also F * K * D1
             
             """
             quadratic_output = []
@@ -110,6 +119,15 @@ class PNN(BaseEstimator, TransformerMixin):
             OUT_ab = [OUT_ab_1, ..., OUT_ab_j] (j = 1,...,50) in this example 
             
             parameter = [50 * K * K] in demension
+            
+            TIME COMPLEXITY:
+            p_ij : M * M
+            p : M * M * N * N
+            lp : M * M * N * N * D2
+            
+            TOTAL for single sample: M^2 * N^2 * D2 also K^2 * F^2 * D2, F = field_size = N, K = embedding_size = M
+            But in the calculation: 
+            (N * M + M * M) * D2 = (N + M) * M * D2 also (F + K)* K * D2
             """
             """
             quadratic_output = []

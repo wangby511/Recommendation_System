@@ -13,32 +13,21 @@ class PNN(BaseEstimator, TransformerMixin):
                  embedding_size=8,
                  deep_layers=[32, 32],
                  deep_init_size = 50,
-                 deep_layer_activation=tf.nn.relu,
                  epoch=10,
                  batch_size=256,
                  learning_rate=0.001,
-                 optimizer="adam",
-                 verbose=False,
                  random_seed=2019,
-                 loss_type="logloss",
                  ):
 
         self.feature_size = feature_size
         self.field_size = field_size
         self.embedding_size = embedding_size
-
         self.deep_layers = deep_layers
         self.deep_init_size = deep_init_size
-        self.deep_layers_activation = deep_layer_activation
-
         self.epoch = epoch
         self.batch_size = batch_size
         self.learning_rate = learning_rate
-        self.optimizer_type = optimizer
-
-        self.verbose = verbose
         self.random_seed = random_seed
-        self.loss_type = loss_type
 
         self._init_graph()
 
@@ -72,20 +61,106 @@ class PNN(BaseEstimator, TransformerMixin):
 
             self.lz = tf.concat(linear_output, axis=1)  # N * init_deep_size
 
-            # Quardatic
+            # Quardatic Part
+            """
+            IPNN
+            f_i ...  K * 1 维
+            f = (f_1^T, f_2^T, ..., f_N^T) 
+            N = field_size
+            lp_I = sigma(i = 1...N)sigma(j = 1...N)w_i * w_j * (f_i1 * f_j1 + ... + f_iK * f_jK)
+            = sigma(i = 1...N)(w_i * f_i1)sigma(j = 1...N)(w_j * f_j1) + ... + sigma(i = 1...N)(w_i * f_iK)sigma(j = 1...N)(w_j * f_jK)
+            
+            let f_column_k =  sigma(i = 1...N)(w_i * f_ik)
+            lp_I = (f_column_1)^2 + (f_column_2)^2 + ... + (f_column_K)^2
+            = [f_column_1,f_column_2,...,f_column_K]的第二范式，平方和
+            
+            lp = [lp_1,lp_2,...,lp_I,...,lp_50] (init_deep_size = 50)
+            
+            self.lp = BATCH_SIZE * 50 维度
+            
+            
+            """
             quadratic_output = []
 
             for i in range(self.deep_init_size):
 
-                weight = tf.reshape(self.weights['product-quadratic-inner'][i], (1, -1, 1)) # 1 x F x 1
+                weight = tf.reshape(self.weights['product-quadratic-inner'][i], (1, -1, 1)) # 1 x F x 1 (2019.7.8)
 
-                f_segma = tf.reduce_sum(tf.multiply(self.embeddings, weight),axis=1)  # N * F * K
+                f_segma = tf.reduce_sum(tf.multiply(self.embeddings, weight),axis=1)  # N * K
 
-                quadratic_output.append(tf.reshape(tf.norm(f_segma), shape=(-1, 1)))  # N * 1
+                lp_i = tf.reshape(tf.norm(f_segma, axis = 1), shape=(-1, 1)) # (2019.7.9)
+
+                quadratic_output.append(lp_i)  # N * 1
 
             self.lp = tf.concat(quadratic_output, axis=1)  # N * init_deep_size
 
+
+            """
+            OPNN
+            p_ij = f_i * (f_j)^T ... K * K 维
+            pij_ab = fi_a * fj_b
+            sigma(i = 1...F)sigma(j = 1...F) pij_ab 
+            = sigma(i = 1...F)(fi_a) * sigma(j = 1...F)(fj_b)
+            = sigma(i = 1...F)(fi)在a,b两个index的乘积
+            f_sigma = sigma(i = 1...F)(fi) ... M * 1 维
+            
+            P_ab = f_sigma[a] * f_sigma[b] (a,b = 1,...,K)
+            OUT_ab_i = f_sigma[a] * f_sigma[b] * parameter_i[a,b] (a,b = 1,...,K)
+            
+            OUT_ab = [OUT_ab_1, ..., OUT_ab_j] (j = 1,...,50) in this example 
+            
+            parameter = [50 * K * K] in demension
+            """
+            """
+            quadratic_output = []
+            
+            for i in range(self.deep_init_size):
+
+            f_sigma = tf.reduce_sum(self.embeddings, axis = 1)
+            
+            p = tf.matmul(tf.expand_dims(f_sigma,2),tf.expand_dims(f_sigma,1)) # N * K * K = (N * K * 1) * (N * 1 * K)
+            
+            weights['product-quadratic-outer'] = tf.Variable(
+                tf.random_normal([self.deep_init_size, self.embedding_size,self.embedding_size], 0.0, 0.01))
+            
+            for i in range(self.deep_init_size):
+            
+                theta = tf.multiply(p,tf.expand_dims(self.weights['product-quadratic-outer'][i],0)) # N * K * K
+                
+                lp_i = tf.reshape(tf.reduce_sum(theta,axis=[1,2]),shape=(-1,1)) # N * 1
+                
+                quadratic_output.append(lp_i) 
+                
+            """
+
             self.y_deep = tf.nn.relu(tf.add(tf.add(self.lz, self.lp), self.weights['product-bias']))
+
+            # Deep layer0
+            self.y_deep = tf.add(tf.matmul(self.y_deep, self.weights["layer_0"]), self.weights["bias_0"])
+            self.y_deep = tf.nn.relu(self.y_deep)
+
+            # Deep layer1
+            self.y_deep = tf.add(tf.matmul(self.y_deep, self.weights["layer_1"]), self.weights["bias_1"])
+            self.y_deep = tf.nn.relu(self.y_deep)
+
+            self.out = tf.add(tf.matmul(self.y_deep, self.weights['output']), self.weights['output_bias'])
+
+            # self.loss_type == "logloss":
+            self.out = tf.nn.sigmoid(self.out)
+            self.loss = tf.losses.log_loss(self.label, self.out)
+
+            # self.loss_type == "mse":
+            # self.loss = tf.nn.l2_loss(tf.subtract(self.label, self.out))
+
+            self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate,
+                                                    beta1=0.9,
+                                                    beta2=0.999,
+                                                    epsilon=1e-8
+                                                    ).minimize(self.loss)
+            self.saver = tf.train.Saver()
+            init = tf.global_variables_initializer()
+            self.sess = tf.Session()
+            self.sess.run(init)
 
 
     def _initialize_weights(self):

@@ -6,18 +6,6 @@ from time import time
 from sklearn.base import BaseEstimator, TransformerMixin
 
 class PNN(BaseEstimator, TransformerMixin):
-    """
-    PNN，全称为Product-based Neural Network，
-    认为在embedding输入到MLP之后学习的交叉特征表达并不充分，
-    提出了一种product layer的思想，既基于乘法的运算来体现体征交叉的DNN网络结构.
-
-    Embedding Layer 根据feat_index选择对应的weights['feature_embeddings']中的embedding值，然后再与对应的feat_value相乘.
-
-    Product Layer 分别计算线性信号向量，二次信号向量，以及偏置项，三者相加同时经过relu激活得到深度网络部分的输入。
-
-    对线性信号权重来说，大小为D1 * F * K
-    对平方信号权重来说，IPNN 的大小为D2 * F，OPNN为D1 * K * K。 F = field_size, K = embedding_size
-    """
 
     def __init__(self,
                  feature_size,

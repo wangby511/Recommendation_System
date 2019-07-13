@@ -6,18 +6,6 @@ from time import time
 from sklearn.base import BaseEstimator, TransformerMixin
 
 class PNN(BaseEstimator, TransformerMixin):
-    """
-    PNN，全称为Product-based Neural Network，
-    认为在embedding输入到MLP之后学习的交叉特征表达并不充分，
-    提出了一种product layer的思想，既基于乘法的运算来体现体征交叉的DNN网络结构.
-
-    Embedding Layer 根据feat_index选择对应的weights['feature_embeddings']中的embedding值，然后再与对应的feat_value相乘.
-
-    Product Layer 分别计算线性信号向量，二次信号向量，以及偏置项，三者相加同时经过relu激活得到深度网络部分的输入。
-
-    对线性信号权重来说，大小为D1 * F * K
-    对平方信号权重来说，IPNN 的大小为D2 * F，OPNN为D1 * K * K。 F = field_size, K = embedding_size
-    """
 
     def __init__(self,
                  feature_size,
@@ -76,7 +64,6 @@ class PNN(BaseEstimator, TransformerMixin):
             # Quardatic Part
             """
             IPNN
-            
             f_i ...  K * 1 维
             f = (f_1^T, f_2^T, ..., f_N^T) 
             N = field_size
@@ -87,18 +74,10 @@ class PNN(BaseEstimator, TransformerMixin):
             lp_I = (f_column_1)^2 + (f_column_2)^2 + ... + (f_column_K)^2
             = [f_column_1,f_column_2,...,f_column_K]的第二范式，平方和
             
-            lp = [lp_1,lp_2,...,lp_I,...,lp_D1] (D1 = init_deep_size = 50)
+            lp = [lp_1,lp_2,...,lp_I,...,lp_50] (init_deep_size = 50)
             
-            self.lp = BATCH_SIZE * D1 维度
+            self.lp = BATCH_SIZE * 50 维度
             
-            TIME COMPLEXITY:
-            p_ij :M
-            p : M * N * N
-            lp : N * N * D1 -> calculate the sum for each p matrix
-            
-            TOTAL for single sample: (M + D1) * N * N also (K + D1) * F * F, F = field_size = N, K = embedding_size = M
-            But in the calculation: 
-            N * M * D1 also F * K * D1
             
             """
             quadratic_output = []
@@ -131,15 +110,6 @@ class PNN(BaseEstimator, TransformerMixin):
             OUT_ab = [OUT_ab_1, ..., OUT_ab_j] (j = 1,...,50) in this example 
             
             parameter = [50 * K * K] in demension
-            
-            TIME COMPLEXITY:
-            p_ij : M * M
-            p : M * M * N * N
-            lp : M * M * N * N * D2
-            
-            TOTAL for single sample: M^2 * N^2 * D2 also K^2 * F^2 * D2, F = field_size = N, K = embedding_size = M
-            But in the calculation: 
-            (N * M + M * M) * D2 = (N + M) * M * D2 also (F + K)* K * D2
             """
             """
             quadratic_output = []

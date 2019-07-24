@@ -1,11 +1,11 @@
 # https://github.com/princewen/tensorflow_practice/blob/master/recommendation/Basic-PNN-Demo/PNN.py
 import numpy as np
 import tensorflow as tf
+import time
 
-from time import time
-from sklearn.base import BaseEstimator, TransformerMixin
+# from sklearn.base import BaseEstimator, TransformerMixin
 
-class PNN(BaseEstimator, TransformerMixin):
+class PNN():
     """
     PNN，全称为Product-based Neural Network，
     认为在embedding输入到MLP之后学习的交叉特征表达并不充分，
@@ -239,5 +239,55 @@ class PNN(BaseEstimator, TransformerMixin):
 
         return weights
 
+    def fit_on_batch(self, Xi, Xv, y):
+        feed_dict = {self.feat_index: Xi,
+                     self.feat_value: Xv,
+                     self.label: y,
+                     self.train_phase: True}
 
-x = PNN(254,37)
+        loss, opt = self.sess.run([self.loss, self.optimizer], feed_dict=feed_dict)
+        return loss
+
+    def get_batch(self, Xi, Xv, y, batch_size, index):
+        start = index * batch_size
+        end = (index + 1) * batch_size
+        end = end if end < len(y) else len(y)
+        return Xi[start:end], Xv[start:end], [[y_] for y_ in y[start:end]]
+
+    def fit(self,
+            Xi_train,
+            Xv_train,
+            y_train,
+            Xi_valid=None,
+            Xv_valid=None,
+            y_valid=None,
+            early_stopping=False,
+            refit=False):
+        """
+        :param Xi_train: [[ind1_1, ind1_2, ...], [ind2_1, ind2_2, ...], ..., [indi_1, indi_2, ..., indi_j, ...], ...]
+                         indi_j is the feature index of feature field j of sample i in the training set
+        :param Xv_train: [[val1_1, val1_2, ...], [val2_1, val2_2, ...], ..., [vali_1, vali_2, ..., vali_j, ...], ...]
+                         vali_j is the feature value of feature field j of sample i in the training set
+                         vali_j can be either binary (1/0, for binary/categorical features) or float (e.g., 10.24, for numerical features)
+        :param y_train: label of each sample in the training set
+        :param Xi_valid: list of list of feature indices of each sample in the validation set
+        :param Xv_valid: list of list of feature values of each sample in the validation set
+        :param y_valid: label of each sample in the validation set
+        :param early_stopping: perform early stopping or not
+        :param refit: refit the model on the train+valid dataset or not
+        :return: None
+        """
+        for epoch in range(self.epoch):
+            t1 = time.time()
+            total_batch = int(len(y_train) / self.batch_size)
+            for i in range(total_batch):
+                Xi_batch, Xv_batch, y_batch = self.get_batch(Xi_train, Xv_train, y_train, self.batch_size, i)
+                self.fit_on_batch(Xi_batch, Xv_batch, y_batch)
+                feed_dict = {
+                    self.feat_index: Xi_batch,
+                    self.feat_value: Xv_batch,
+                    self.label: y_batch
+                }
+                loss, opt = self.sess.run([self.loss, self.optimizer], feed_dict=feed_dict)
+                print("epoch", epoch, "loss", loss)
+

@@ -29,6 +29,7 @@ print(trainset.n_items) # 50539
 print(trainset.n_users) # 1076
 
 print("开始训练模型...")
+#如果不指定 则默认user_based
 #sim_options = {'user_based': False}
 #algo = KNNBaseline(sim_options=sim_options)
 algo = KNNBaseline()

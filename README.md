@@ -1,12 +1,16 @@
-# Recommendation_System
+# Recommendation_System & CTR
 
-## fm: Factorization Machines
+## 20190610 fm: Factorization Machines
 
-## DeepFM: FM combined with deep neural network 2019.6.26
+## 20190626 DeepFM: FM combined with deep neural network
 
-## PNN: 2019.7.8
+## 20190708 PNN network
 
 ## 20190722 surprise library jupyter
 
 ## 20190723 PNN MAIN pipeline
+
+## 20190905 SVD (tf version)
+
+## 20190912 FM (edit version. wrapper in class)
 

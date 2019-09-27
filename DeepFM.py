@@ -125,14 +125,14 @@ class DeepFM(BaseEstimator, TransformerMixin):
 
 
             # ----DeepFM---------
-            if self.use_fm and self.use_deep:
-                concat_input = tf.concat([self.y_first_order, self.y_second_order, self.y_deep], axis=1)
-            elif self.use_fm:
-                concat_input = tf.concat([self.y_first_order, self.y_second_order], axis=1)
-            elif self.use_deep:
-                concat_input = self.y_deep
+            # if self.use_fm and self.use_deep:
+            self.concat_input = tf.concat([self.y_first_order, self.y_second_order, self.y_deep], axis=1)
+            # elif self.use_fm:
+            #     concat_input = tf.concat([self.y_first_order, self.y_second_order], axis=1)
+            # elif self.use_deep:
+            #     concat_input = self.y_deep
 
-            self.out = tf.add(tf.matmul(concat_input, self.weights['concat_projection']), self.weights['concat_bias'])
+            self.out = tf.add(tf.matmul(self.concat_input, self.weights['concat_projection']), self.weights['concat_bias'])
 
             # loss
             if self.loss_type == "logloss":
@@ -149,11 +149,19 @@ class DeepFM(BaseEstimator, TransformerMixin):
 
             # optimize
             if self.optimizer_type == "adam":
-                self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999,
-                                                        epsilon=1e-8).minimize(self.loss)
+                self.optimizer = tf.train.AdamOptimizer(
+                    learning_rate=self.learning_rate,
+                    beta1=0.9,
+                    beta2=0.999,
+                    epsilon=1e-8
+            ).minimize(self.loss)
+
             elif self.optimizer_type == "adagrad":
-                self.optimizer = tf.train.AdagradOptimizer(learning_rate=self.learning_rate,
-                                                           initial_accumulator_value=1e-8).minimize(self.loss)
+                self.optimizer = tf.train.AdagradOptimizer(
+                    learning_rate=self.learning_rate,
+                    initial_accumulator_value=1e-8
+                ).minimize(self.loss)
+
             elif self.optimizer_type == "gd":
                 self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self.loss)
 
@@ -178,8 +186,8 @@ class DeepFM(BaseEstimator, TransformerMixin):
                 print("epoch %s,loss is %s" % (str(i), str(epoch_loss)))
 
 
-TRAIN_FILE = "data/train.csv"
-TEST_FILE = "data/test.csv"
+TRAIN_FILE = "Driver_Prediction_Data/train.csv"
+TEST_FILE = "Driver_Prediction_Data/test.csv"
 
 NUMERIC_COLS = [
     "ps_reg_01", "ps_reg_02", "ps_reg_03",

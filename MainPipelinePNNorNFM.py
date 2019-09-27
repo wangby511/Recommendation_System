@@ -1,5 +1,6 @@
 import pandas as pd
 from PNN import PNN
+from NFM import NFM
 TRAIN_FILE = "Driver_Prediction_Data/train.csv"
 TEST_FILE = "Driver_Prediction_Data/test.csv"
 
@@ -99,20 +100,27 @@ def main():
 
     Xi_test, Xv_test, ids_test = data_parse(dfTest, feat_dict, training=False)
 
-    print(dfTrain.dtypes)
+    # print(dfTrain.dtypes)
 
     feature_size = feat_dimension
     field_size = len(Xi_train[0])
 
     print(feature_size,field_size) # 254, 37
 
-    pnn_model = PNN(feature_size = feat_dimension,
+    # pnn_model = PNN(feature_size = feat_dimension,
+    #                 field_size = len(Xi_train[0]),
+    #                 batch_size=128,
+    #                 epoch=100
+    #                 )
+    #
+    # pnn_model.fit(Xi_train,Xv_train,y_train)
+
+    nfm_model = NFM(feature_size = feat_dimension,
                     field_size = len(Xi_train[0]),
                     batch_size=128,
-                    epoch=100
+                    epoch=5
                     )
-
-    pnn_model.fit(Xi_train,Xv_train,y_train)
+    nfm_model.fit(Xi_train,Xv_train,y_train)
 
 
 

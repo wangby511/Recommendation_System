@@ -1,6 +1,8 @@
 import pandas as pd
 from PNN import PNN
 from NFM import NFM
+from DeepCrossNetwork import DCN
+
 TRAIN_FILE = "Driver_Prediction_Data/train.csv"
 TEST_FILE = "Driver_Prediction_Data/test.csv"
 
@@ -115,12 +117,19 @@ def main():
     #
     # pnn_model.fit(Xi_train,Xv_train,y_train)
 
-    nfm_model = NFM(feature_size = feat_dimension,
-                    field_size = len(Xi_train[0]),
+    # nfm_model = NFM(feature_size = feat_dimension,
+    #                 field_size = len(Xi_train[0]),
+    #                 batch_size=128,
+    #                 epoch=5
+    #                 )
+    # nfm_model.fit(Xi_train,Xv_train,y_train)
+
+    dcn_model = DCN(feature_size=feat_dimension,
+                    field_size=len(Xi_train[0]),
                     batch_size=128,
-                    epoch=5
+                    epoch=1
                     )
-    nfm_model.fit(Xi_train,Xv_train,y_train)
+    dcn_model.fit(Xi_train, Xv_train, y_train)
 
 
 

@@ -22,3 +22,5 @@
 
 #### 20190926 Deep & Cross Network : x(l + 1) = x0 * x(l)^T * w(l) + b(l) + x(l)
 
+#### 20200206 MMR (Maximal Marginal Relevance)
+

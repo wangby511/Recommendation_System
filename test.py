@@ -1,6 +1,5 @@
 # import tensorflow as tf
 # import numpy as np
-#
 # with tf.Graph().as_default():
 #     # a = tf.constant([1,2,3,4],name='a')
 #     # b = tf.reshape(a,[-1,1])
@@ -80,16 +79,16 @@ x6 = tf.multiply(x1,x3)
 #
 # x3 = tf.constant([3,2,1,0,1])
 # y3 = tf.one_hot(x3, 4)
-x = tf.reduce_sum(x1,axis=0,keep_dims=True)
-y = tf.reduce_sum(x1,axis=0)
+# x = tf.reduce_sum(x1,axis=0,keep_dims=True)
+# y = tf.reduce_sum(x1,axis=0)
 
 
 
-with tf.compat.v1.Session() as sess:
+# with tf.compat.v1.Session() as sess:
     # print("label1=", sess.run(label1))
     # print("label2=", sess.run(label2))
-    print(sess.run(x3))
-    print(sess.run(x6))
+    # print(sess.run(x3))
+    # print(sess.run(x6))
     # print("y=", sess.run(y))
     # print("labels=",sess.run(labels))
 #     print("p_multiply=", sess.run(p_multiply))
@@ -105,3 +104,94 @@ with tf.compat.v1.Session() as sess:
 # b=np.array([[7,8,9],[10,11,12]])
 # d = np.concatenate((a,b),axis = -1)
 # print(d)
+
+
+
+TRAIN_FILE = "Driver_Prediction_Data/train.csv"
+TEST_FILE = "Driver_Prediction_Data/test.csv"
+
+NUMERIC_COLS = [
+    "ps_reg_01", "ps_reg_02", "ps_reg_03",
+    "ps_car_12", "ps_car_13", "ps_car_14", "ps_car_15"
+]
+
+IGNORE_COLS = [
+    "id", "target",
+    "ps_calc_01", "ps_calc_02", "ps_calc_03", "ps_calc_04",
+    "ps_calc_05", "ps_calc_06", "ps_calc_07", "ps_calc_08",
+    "ps_calc_09", "ps_calc_10", "ps_calc_11", "ps_calc_12",
+    "ps_calc_13", "ps_calc_14",
+    "ps_calc_15_bin", "ps_calc_16_bin", "ps_calc_17_bin",
+    "ps_calc_18_bin", "ps_calc_19_bin", "ps_calc_20_bin"
+]
+
+from WideAndDeep import WideAndDeep
+def main():
+    dfTrain = pd.read_csv(TRAIN_FILE)  # shape (10000, 59)
+    dfTest = pd.read_csv(TEST_FILE)  # shape (2000, 58)
+    df = pd.concat([dfTrain, dfTest])
+    # print (df.shape) # shape (12000, 59)
+
+    feature_dict = {}
+    total_feature = 0
+    for col in df.columns:
+        if col in IGNORE_COLS:
+            continue
+        elif col in NUMERIC_COLS:
+            feature_dict[col] = total_feature
+            total_feature += 1
+        else:
+            unique_val = df[col].unique()
+            feature_dict[col] = dict(zip(unique_val, range(total_feature, len(unique_val) + total_feature)))
+            total_feature += len(unique_val)
+            # print("total_feature =",total_feature,"\n")
+    # print(total_feature)  # 254
+
+    """
+    对训练集进行转化
+    """
+    train_y = dfTrain[['target']].values.tolist()
+    dfTrain.drop(['target', 'id'], axis=1, inplace=True)
+    train_feature_index = dfTrain.copy()
+    train_feature_value = dfTrain.copy()
+    # n_train = train_feature_value.shape[0]
+
+    for col in train_feature_index.columns:
+        if col in IGNORE_COLS:
+            train_feature_index.drop(col, axis=1, inplace=True)
+            train_feature_value.drop(col, axis=1, inplace=True)
+            continue
+        elif col in NUMERIC_COLS:
+            train_feature_index[col] = feature_dict[col]
+        else:
+            train_feature_index[col] = train_feature_index[col].map(feature_dict[col])
+            train_feature_value[col] = 1
+    field_size = train_feature_value.shape[1]
+
+    """
+    对测试集进行转化
+    """
+    # test_ids = dfTest['id'].values.tolist()
+    # dfTest.drop(['id'], axis=1, inplace=True)
+    # test_feature_index = dfTest.copy()
+    # test_feature_value = dfTest.copy()
+    #
+    # for col in test_feature_index.columns:
+    #     if col in IGNORE_COLS:
+    #         test_feature_index.drop(col, axis=1, inplace=True)
+    #         test_feature_value.drop(col, axis=1, inplace=True)
+    #         continue
+    #     elif col in NUMERIC_COLS:
+    #         test_feature_index[col] = feature_dict[col]
+    #     else:
+    #         test_feature_index[col] = test_feature_index[col].map(feature_dict[col])
+    #         test_feature_value[col] = 1
+
+
+    wideanddeep = WideAndDeep(feature_size=total_feature, field_size=field_size, embedding_size=8)
+
+    """train"""
+    wideanddeep.train(train_feature_index, train_feature_value, train_y)
+    # epoch 199, loss is 0.15737674
+
+main()

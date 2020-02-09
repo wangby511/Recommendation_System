@@ -24,3 +24,6 @@
 
 #### 20200206 MMR (Maximal Marginal Relevance)
 
+#### 20200207 AFM Model
+
+#### 20200208 Wide And Deep Model

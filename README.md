@@ -27,3 +27,7 @@
 #### 20200207 AFM Model
 
 #### 20200208 Wide And Deep Model
+
+#### 20200209 Dice part of Deep Interest Network
+
+#### 20200210 Attention part of Deep Interest Network

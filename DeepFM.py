@@ -186,8 +186,8 @@ class DeepFM(BaseEstimator, TransformerMixin):
                 print("epoch %s,loss is %s" % (str(i), str(epoch_loss)))
 
 
-TRAIN_FILE = "Driver_Prediction_Data/train.csv"
-TEST_FILE = "Driver_Prediction_Data/test.csv"
+TRAIN_FILE = "Data/Driver_Prediction_Data/train.csv"
+TEST_FILE = "Data/Driver_Prediction_Data/test.csv"
 
 NUMERIC_COLS = [
     "ps_reg_01", "ps_reg_02", "ps_reg_03",
